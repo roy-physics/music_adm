@@ -110,6 +110,10 @@ typedef struct cosmology{
     w_0,                //!< dark energy equation of state parameter 1: w = w0 + a * wa
     w_a,                //!< dark energy equation of state parameter 2: w = w0 + a * wa
 
+    // ADM Parameters //
+    do_adm,    // a Boolean variable (1 or 0) that tells the code if baryonic component is ADM or not
+    Omega_adm, // ADM dark matter density
+
   //Gamma,		//!< shape parameter (of historical interest, as a free parameter)
   //fnl,			//!< non-gaussian contribution parameter
   //w0,			//!< dark energy equation of state parameter (not implemented, i.e. =1 at the moment)
@@ -134,6 +138,10 @@ typedef struct cosmology{
     
     Omega_r     = cf.getValueSafe<double>( "cosmology", "Omega_r", 0.0 ); // no longer default to nonzero (8.3e-5)
     Omega_k     = 1.0 - Omega_m - Omega_DE - Omega_r;
+
+    // ADM parameters //
+    do_adm = cf.getValueSafe<bool>("cosmology","do_adm",0);             // Turn baryons into ADM? Default to no.
+    Omega_adm = cf.getValueSafe<double>("cosmology","Omega_adm",0.0);   // Density of ADM dark matter. Default to 0.0
 
     H0	       	= cf.getValue<double>( "cosmology", "H0" );
     sigma8     	= cf.getValue<double>( "cosmology", "sigma_8" );
