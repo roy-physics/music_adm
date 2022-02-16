@@ -173,7 +173,8 @@ void print_hierarchy_stats( config_file& cf, const refinement_hierarchy& rh )
 	if( bbaryons )
 	{
 		cmass = (omegam-omegab-omega_adm)*rhom*dx3;
-		bmass = omegab*rhom*dx3;
+		if( do_adm ) {bmass = omega_adm*rhom*dx3;} // if we're doing ADM, then bmass = adm mass
+		else bmass = omegab*rhom*dx3;			   // otherwise, we're just using the baryonic mass
 	}else
 		cmass = (omegam-omega_adm)*rhom*dx3;
 	
