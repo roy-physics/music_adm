@@ -111,8 +111,8 @@ typedef struct cosmology{
     w_a,                //!< dark energy equation of state parameter 2: w = w0 + a * wa
 
     // ADM Parameters //
-    do_adm,    // a Boolean variable (1 or 0) that tells the code if baryonic component is ADM or not
     Omega_adm, // ADM dark matter density
+    DeltaN_adm, // ADM Neff, which controls the ADM temperature
 
   //Gamma,		//!< shape parameter (of historical interest, as a free parameter)
   //fnl,			//!< non-gaussian contribution parameter
@@ -125,6 +125,9 @@ typedef struct cosmology{
     WDMg_x,			//!< Warm DM particle degrees of freedom
     astart;			//!< expansion factor a for which to generate initial conditions
   
+  // ADM Parameter
+  int do_adm;    // an integer (2 or 1 or 0) that tells the code if baryonic component is ADM+baryon or ADM or baryon respectively
+
   cosmology( config_file cf )
   {
     double zstart = cf.getValue<double>( "setup", "zstart" );
@@ -140,8 +143,9 @@ typedef struct cosmology{
     Omega_k     = 1.0 - Omega_m - Omega_DE - Omega_r;
 
     // ADM parameters //
-    do_adm = cf.getValueSafe<bool>("cosmology","do_adm",0);             // Turn baryons into ADM? Default to no.
+    do_adm = cf.getValueSafe<int>("cosmology","do_adm",0);             // Are baryons Baryons (0), ADM(1) or ADM+Baryons(2)?
     Omega_adm = cf.getValueSafe<double>("cosmology","Omega_adm",0.0);   // Density of ADM dark matter. Default to 0.0
+    DeltaN_adm = cf.getValueSafe<double>("cosmology","DeltaN_adm",0.0);   // Relativistic ADM species (controls Tcmb_adm). Default to 0.0
 
     H0	       	= cf.getValue<double>( "cosmology", "H0" );
     sigma8     	= cf.getValue<double>( "cosmology", "sigma_8" );

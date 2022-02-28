@@ -22,10 +22,12 @@ private:
   gsl_spline *spline_tot, *spline_cdm, *spline_baryon;
   gsl_spline *spline_vtot, *spline_vcdm, *spline_vbaryon;
 
-  double m_kmin, m_kmax, m_Omega_b, m_Omega_m, m_zstart;
+  double m_kmin, m_kmax, m_Omega_b, m_Omega_m, m_Omega_adm, DeltaN_adm, m_zstart;
   unsigned m_nlines;
 
   bool m_linbaryoninterp;
+
+  int do_adm;
 
   void read_table(void) {
 
@@ -89,9 +91,16 @@ private:
           throw std::runtime_error("Error reading transfer function file \'" +
                                    m_filename_Tk + "\'");
         }
+  if( do_adm == 1 ) { // baryons are actually ADM
+    //if( m_Omega_adm < 1e-6 ) Tkvtot = Tktot;
+    Tkvtot=((m_Omega_m-m_Omega_b-m_Omega_adm)*Tkvc+m_Omega_adm*Tkvb)/m_Omega_m; //MvD
+  } else if( do_adm == 2) { // baryons are Baryons+ADM
+    Tkvtot = ((m_Omega_m-m_Omega_b-m_Omega_adm)*Tkvc+(m_Omega_adm+m_Omega_b)*Tkvb)/m_Omega_m;
+  } else { // Baryons are Baryons
+    	if( m_Omega_b < 1e-6 ) Tkvtot = Tktot;
+	    else Tkvtot=((m_Omega_m-m_Omega_b-m_Omega_adm)*Tkvc+m_Omega_b*Tkvb)/m_Omega_m; //MvD
+  }
 
-	if( m_Omega_b < 1e-6 ) Tkvtot = Tktot;
-	else Tkvtot=((m_Omega_m-m_Omega_b)*Tkvc+m_Omega_b*Tkvb)/m_Omega_m; //MvD
 
         m_linbaryoninterp |= Tkb < 0.0 || Tkvb < 0.0;
 
@@ -170,6 +179,10 @@ public:
     m_Omega_b=cf.getValue<double>("cosmology","Omega_b"); //MvD
     m_zstart =cf.getValue<double>("setup","zstart"); //MvD
 
+    // ADM Values
+    m_Omega_adm = cf.getValueSafe<double>("cosmology","Omega_adm",0.0);
+    do_adm = cf.getValueSafe<int>("cosmology","do_adm",0);
+    DeltaN_adm = cf.getValueSafe<double>("cosmology","DeltaN_adm",0.0);
     read_table();
 
     acc_tot = gsl_interp_accel_alloc();

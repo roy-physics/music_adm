@@ -26,6 +26,11 @@ public:
   double omegab_;
   double gamma_;
   bool shift_halfcell_;
+  
+  // ADM parameters
+  int do_adm_;
+  double omega_adm_;
+  double deltaN_adm_;
     
 protected:
   
@@ -268,8 +273,12 @@ protected:
     tmp1.assign(block_buf_size_,0.0);
     tmp2.assign(block_buf_size_,0.0);
     
-    double facb = omegab_/header_.Omega0, facc = (header_.Omega0-omegab_)/header_.Omega0;
-    
+    double facb = omegab_/header_.Omega0, facc = (header_.Omega0-omegab_-omega_adm_)/header_.Omega0;
+    if(do_adm_ == 1) { // if baryons are ADM
+		facb = omega_adm_/header_.Omega0;
+	} else if(do_adm_ == 2) { // if baryons are ADM+Baryons
+		facb = (omega_adm_ + omegab_)/header_.Omega0;
+	}
     
     for( int icomp=0; icomp < 3; ++icomp )
       {
@@ -762,8 +771,14 @@ protected:
 	if( !do_baryons_ )
 	  header_.mass[1] = header_.Omega0 * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
 	else{
-	  header_.mass[0] = (omegab_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
-	  header_.mass[1] = (header_.Omega0-omegab_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
+	  if( do_adm_ == 1 ) {// if baryons are ADM particles, Type 0 is ADM
+	  	header_.mass[0] = (omega_adm_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
+	  } else if( do_adm_ == 2) { // if baryons are Baryon+ADM, Type 0 is Baryon+ADM
+		header_.mass[0] = (omega_adm_ + omegab_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
+	  } else { // otherwise, Type 0 is just Baryon
+		  header_.mass[0] = (omegab_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
+	  }
+	  header_.mass[1] = (header_.Omega0-omegab_-omega_adm_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
 	}
 
 	//...
@@ -888,6 +903,11 @@ public:
     
     do_baryons_ = cf.getValueSafe<bool>("setup","baryons",false);
     omegab_ = cf.getValueSafe<double>("cosmology","Omega_b",0.045);
+
+	// ADM parameters
+	do_adm_ = cf.getValueSafe<int>("setup","do_adm",0);
+    omega_adm_ = cf.getValueSafe<double>("cosmology","Omega_adm",0.0);
+	deltaN_adm_ = cf.getValueSafe<double>("cosmology","DeltaN_adm",0.0);
 
     //... new way
     std::string lunitstr = cf.getValueSafe<std::string>("output","gadget_lunit","Mpc");

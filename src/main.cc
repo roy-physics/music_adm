@@ -163,8 +163,9 @@ void print_hierarchy_stats( config_file& cf, const refinement_hierarchy& rh )
 	double omegab = cf.getValue<double>("cosmology","Omega_b");
 	bool bbaryons = cf.getValue<bool>("setup","baryons");
 	double boxlength = cf.getValue<double>("setup","boxlength");
-	bool do_adm = cf.getValueSafe<bool>("cosmology","do_adm",0);
+	int do_adm = cf.getValueSafe<int>("cosmology","do_adm",0);
 	double omega_adm = cf.getValueSafe<double>("cosmology","Omega_adm",0.0);
+	double DeltaN_adm = cf.getValueSafe<double>("cosmology","DeltaN_adm",0.0);
 	
 	unsigned levelmin = rh.levelmin();
 	double dx = boxlength/(double)(1<<levelmin), dx3=dx*dx*dx;
@@ -173,14 +174,15 @@ void print_hierarchy_stats( config_file& cf, const refinement_hierarchy& rh )
 	if( bbaryons )
 	{
 		cmass = (omegam-omegab-omega_adm)*rhom*dx3;
-		if( do_adm ) {bmass = omega_adm*rhom*dx3;} // if we're doing ADM, then bmass = adm mass
-		else bmass = omegab*rhom*dx3;			   // otherwise, we're just using the baryonic mass
-	}else
-		cmass = (omegam-omega_adm)*rhom*dx3;
-	
+		if( do_adm == 1 ) {bmass = omega_adm*rhom*dx3;} // if we're doing ADM, then bmass = adm mass
+		else if( do_adm == 2 ) {bmass = (omegab + omega_adm)*rhom*dx3;} // if we're doing ADM+Baryon, bmass=adm_mass + baryon_mass
+		else {bmass = omegab*rhom*dx3;} 	// otherwise, we're just doing baryon mass			   
+	}else { // if we're not including baryons, it's all CDM
+		cmass = (omegam)*rhom*dx3; 
+	}	
 	std::cout << "-------------------------------------------------------------\n";
 
-	std::cout << "ADM parameters: Omega_adm = " << omega_adm << ", do_adm = " << do_adm << "\n" << std::endl; 
+	std::cout << "ADM parameters: Omega_adm = " << omega_adm << ", do_adm = " << do_adm << ", DeltaN_adm = " << DeltaN_adm << "\n" << std::endl; 
 	
 	if( rh.get_shift(0)!=0||rh.get_shift(1)!=0||rh.get_shift(2)!=0 )
 		std::cout << " - Domain will be shifted by (" << rh.get_shift(0) << ", " << rh.get_shift(1) << ", " << rh.get_shift(2) << ")\n" << std::endl;

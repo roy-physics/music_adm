@@ -61,6 +61,10 @@ public:
 		cosmo_.H0			= pcf_->getValue<real_t>( "cosmology", "H0" );
 		cosmo_.sigma8		= pcf_->getValue<real_t>( "cosmology", "sigma_8" );
 		cosmo_.nspect		= pcf_->getValue<real_t>( "cosmology", "nspec" );
+		// ADM Parameters
+		cosmo_.Omega_adm	= pcf_->getValueSafe<real_t>("cosmology","Omega_adm",0.0);
+		cosmo_.do_adm		= pcf_->getValueSafe<int>("cosmology","do_adm",0);
+		cosmo_.DeltaN_adm	= pcf_->getValueSafe<real_t>("cosmology","DeltaN_adm",0.0);
 	}
 	
 	//! destructor
