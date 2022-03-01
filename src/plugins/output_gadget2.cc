@@ -772,10 +772,13 @@ protected:
 	  header_.mass[1] = header_.Omega0 * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
 	else{
 	  if( do_adm_ == 1 ) {// if baryons are ADM particles, Type 0 is ADM
+	  	std::cout << " - Gadget2 : writing header mass w/ do_adm = " << do_adm_ << " and omega_b = " << omega_adm_ << "\n";
 	  	header_.mass[0] = (omega_adm_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
 	  } else if( do_adm_ == 2) { // if baryons are Baryon+ADM, Type 0 is Baryon+ADM
+		std::cout << " - Gadget2 : writing header mass w/ do_adm = " << do_adm_ << " and omega_b = " << (omega_adm_)+omegab_ << "\n";
 		header_.mass[0] = (omega_adm_ + omegab_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
 	  } else { // otherwise, Type 0 is just Baryon
+	  	  std::cout << " - Gadget2 : writing header mass w/ do_adm = " << do_adm_ << " and omega_b = " << omegab_ << "\n";
 		  header_.mass[0] = (omegab_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
 	  }
 	  header_.mass[1] = (header_.Omega0-omegab_-omega_adm_) * rhoc * pow(header_.BoxSize,3.)/pow(2,3*levelmax_);
@@ -905,7 +908,7 @@ public:
     omegab_ = cf.getValueSafe<double>("cosmology","Omega_b",0.045);
 
 	// ADM parameters
-	do_adm_ = cf.getValueSafe<int>("setup","do_adm",0);
+	do_adm_ = cf.getValueSafe<int>("cosmology","do_adm",0);
     omega_adm_ = cf.getValueSafe<double>("cosmology","Omega_adm",0.0);
 	deltaN_adm_ = cf.getValueSafe<double>("cosmology","DeltaN_adm",0.0);
 
