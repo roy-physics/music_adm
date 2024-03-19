@@ -584,7 +584,6 @@ void GenerateDensityHierarchy(config_file &cf, transfer_function *ptf, tf_type t
 	{
 		std::cout << " - Using k-space transfer function kernel.\n";
 		LOGUSER("Using k-space transfer function kernel.");
-
 #ifdef SINGLE_PRECISION
 		the_kernel_creator = convolution::get_kernel_map()["tf_kernel_k_float"];
 #else
@@ -603,7 +602,6 @@ void GenerateDensityHierarchy(config_file &cf, transfer_function *ptf, tf_type t
 	}
 
 	convolution::kernel *the_tf_kernel = the_kernel_creator->create(cf, ptf, refh, type);
-
 	/***** PERFORM CONVOLUTIONS *****/
 	if (kspaceTF)
 	{

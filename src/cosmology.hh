@@ -133,7 +133,6 @@ public:
         static double nspect = (double)ptf->cosmo_.nspect;
         
         double tf = ptf->compute(k, total);
-        
         //... no growth factor since we compute at z=0 and normalize so that D+(z=0)=1
         return k*k * w*w * pow((double)k,(double)nspect) * tf*tf;
         
