@@ -223,7 +223,6 @@ public:
 		std::map<std::string,std::string>::const_iterator i = m_Items.find(section + '/' + key);
 		if ( i == m_Items.end() ) 
 		  throw ErrItemNotFound('\'' + section + '/' + key + std::string("\' not found."));
-		  
 		convert(i->second,r);
 		return r;
 	}

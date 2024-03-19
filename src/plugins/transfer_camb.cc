@@ -25,7 +25,7 @@ private:
   double m_kmin, m_kmax, m_Omega_b, m_Omega_m, m_Omega_adm, DeltaN_adm, m_zstart;
   unsigned m_nlines;
 
-  bool m_linbaryoninterp;
+  bool m_linbaryoninterp,m_lindminterp,m_lintotinterp;
 
   int do_adm;
 
@@ -33,6 +33,8 @@ private:
 
     m_nlines = 0;
     m_linbaryoninterp = false;
+    m_lindminterp = false;
+    m_lintotinterp = false;
 
 #ifdef WITH_MPI
     if (MPI::COMM_WORLD.Get_rank() == 0) {
@@ -103,6 +105,8 @@ private:
 
 
         m_linbaryoninterp |= Tkb < 0.0 || Tkvb < 0.0;
+        m_lindminterp |= Tkc < 0.0 || Tkvc < 0.0;
+	m_lintotinterp |= Tktot < 0.0 || Tkvtot < 0.0;
 
         m_tab_k.push_back(log10(k));
 
@@ -122,11 +126,14 @@ private:
       }
 
       for (size_t i = 0; i < m_tab_k.size(); ++i) {
-        m_tab_Tk_tot[i] = log10(m_tab_Tk_tot[i]);
-        m_tab_Tk_cdm[i] = log10(m_tab_Tk_cdm[i]);
-        m_tab_Tvk_cdm[i] = log10(m_tab_Tvk_cdm[i]);
-        m_tab_Tvk_tot[i] = log10(m_tab_Tvk_tot[i]);
-
+	if (!m_lindminterp){
+          m_tab_Tk_cdm[i] = log10(m_tab_Tk_cdm[i]);
+	  m_tab_Tvk_cdm[i] = log10(m_tab_Tvk_cdm[i]);
+	}	
+	if (!m_lintotinterp){
+	  m_tab_Tk_tot[i] = log10(m_tab_Tk_tot[i]);
+          m_tab_Tvk_tot[i] = log10(m_tab_Tvk_tot[i]);
+        }
         if (!m_linbaryoninterp) {
           m_tab_Tk_baryon[i] = log10(m_tab_Tk_baryon[i]);
           m_tab_Tvk_baryon[i] = log10(m_tab_Tvk_baryon[i]);
@@ -139,6 +146,12 @@ private:
 
       if (m_linbaryoninterp)
         LOGINFO("Using log-lin interpolation for baryons\n    (TF is not "
+                "positive definite)");
+      if (m_lindminterp)
+        LOGINFO("Using log-lin interpolation for dark matter\n    (TF is not "
+                "positive definite)");
+      if (m_lintotinterp)
+        LOGINFO("Using log-lin interpolation for total\n    (TF is not "
                 "positive definite)");
 
 #ifdef WITH_MPI
@@ -246,6 +259,8 @@ public:
     case cdm:
       v1 = m_tab_Tk_cdm[n1];
       v2 = m_tab_Tk_cdm[n];
+      if (m_lindminterp)
+        return std::max((v2 - v1) / dk * (delk) + v2, tiny);
       return pow(10.0, (v2 - v1) / dk * (delk) + v2);
     case baryon:
       v1 = m_tab_Tk_baryon[n1];
@@ -256,10 +271,14 @@ public:
     case vtotal: //>[150609SH: add]
       v1 = m_tab_Tvk_tot[n1];
       v2 = m_tab_Tvk_tot[n];
+      if (m_lintotinterp)
+        return std::max((v2 - v1) / dk * (delk) + v2, tiny);
       return pow(10.0, (v2 - v1) / dk * (delk) + v2);
     case vcdm: //>[150609SH: add]
       v1 = m_tab_Tvk_cdm[n1];
       v2 = m_tab_Tvk_cdm[n];
+      if (m_lindminterp)
+        return std::max((v2 - v1) / dk * (delk) + v2, tiny);
       return pow(10.0, (v2 - v1) / dk * (delk) + v2);
     case vbaryon: //>[150609SH: add]
       v1 = m_tab_Tvk_baryon[n1];
@@ -270,6 +289,8 @@ public:
     case total:
       v1 = m_tab_Tk_tot[n1];
       v2 = m_tab_Tk_tot[n];
+      if (m_lintotinterp)
+        return std::max((v2 - v1) / dk * (delk) + v2, tiny);
       return pow(10.0, (v2 - v1) / dk * (delk) + v2);
     default:
       throw std::runtime_error(
@@ -284,20 +305,28 @@ public:
     if (k < m_kmin) {
       switch (type) {
       case cdm:
+        if (m_lindminterp)
+          return m_tab_Tk_cdm[0];
         return pow(10.0, m_tab_Tk_cdm[0]);
       case baryon:
         if (m_linbaryoninterp)
           return m_tab_Tk_baryon[0];
         return pow(10.0, m_tab_Tk_baryon[0]);
       case vtotal:
+        if (m_lintotinterp)
+          return m_tab_Tvk_tot[0];
         return pow(10.0, m_tab_Tvk_tot[0]);
       case vcdm:
+        if (m_lindminterp)
+          return m_tab_Tvk_cdm[0];
         return pow(10.0, m_tab_Tvk_cdm[0]);
       case vbaryon:
         if (m_linbaryoninterp)
           return m_tab_Tvk_baryon[0];
         return pow(10.0, m_tab_Tvk_baryon[0]);
       case total:
+        if (m_lindminterp)
+          return m_tab_Tk_tot[0];
         return pow(10.0, m_tab_Tk_tot[0]);
       default:
         throw std::runtime_error(
@@ -307,24 +336,33 @@ public:
     // use linear interpolation on the right side of the tabulated values
     else if (k > m_kmax)
       return extrap_right(k, type);
+    
 
     double lk = log10(k);
     switch (type) {
     case cdm:
+      if (m_lindminterp)
+        return gsl_spline_eval(spline_cdm, lk, acc_cdm);
       return pow(10.0, gsl_spline_eval(spline_cdm, lk, acc_cdm));
     case baryon:
       if (m_linbaryoninterp)
         return gsl_spline_eval(spline_baryon, lk, acc_baryon);
       return pow(10.0, gsl_spline_eval(spline_baryon, lk, acc_baryon));
     case vtotal:
+      if (m_lintotinterp)
+        return gsl_spline_eval(spline_vtot, lk, acc_vtot);
       return pow(10.0, gsl_spline_eval(spline_vtot, lk, acc_vtot)); //MvD
     case vcdm:
+      if (m_lindminterp)
+        return gsl_spline_eval(spline_vcdm, lk, acc_vcdm);
       return pow(10.0, gsl_spline_eval(spline_vcdm, lk, acc_vcdm));
     case vbaryon:
       if (m_linbaryoninterp)
         return gsl_spline_eval(spline_vbaryon, lk, acc_vbaryon);
       return pow(10.0, gsl_spline_eval(spline_vbaryon, lk, acc_vbaryon));
     case total:
+      if (m_lintotinterp)
+        return gsl_spline_eval(spline_tot, lk, acc_tot);
       return pow(10.0, gsl_spline_eval(spline_tot, lk, acc_tot));
     default:
       throw std::runtime_error(
